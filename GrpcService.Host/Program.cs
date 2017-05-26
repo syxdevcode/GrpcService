@@ -1,4 +1,8 @@
-﻿using System;
+﻿using GrpcService.Impl;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.EnvironmentVariables;
+using System;
+using System.IO;
 
 namespace GrpcService.Host
 {
@@ -6,7 +10,26 @@ namespace GrpcService.Host
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            string envName = string.Empty;
+            var builder = new ConfigurationBuilder();
+            var provider = new EnvironmentVariablesConfigurationProvider();
+            provider.Load();
+            if (!provider.TryGet("EnvName", out envName))
+            {
+                envName = "debug";
+            }
+
+            if (args != null && args.Length > 0)
+                envName = args[0];
+
+            var config = builder.SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{envName}.json", optional: true)
+                .Build();
+
+            Console.WriteLine("service start");
+            RpcConfiguration.Start(config);
+            //RpcConfiguration.Stop();
         }
     }
 }
